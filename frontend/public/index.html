@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EmotionLens — Análise de Expressões Faciais</title>
+    <meta name="description"
+        content="Protótipo acadêmico para análise de expressões faciais em vídeos. Trabalho de Conclusão de Curso em Ciência da Computação.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                        <circle cx="14" cy="14" r="12" stroke="url(#logo-grad)" stroke-width="2.5" fill="none" />
+                        <circle cx="10" cy="12" r="1.5" fill="url(#logo-grad)" />
+                        <circle cx="18" cy="12" r="1.5" fill="url(#logo-grad)" />
+                        <path d="M10 18 Q14 21 18 18" stroke="url(#logo-grad)" stroke-width="2" stroke-linecap="round"
+                            fill="none" />
+                        <defs>
+                            <linearGradient id="logo-grad" x1="0" y1="0" x2="28" y2="28">
+                                <stop offset="0%" stop-color="#7c5cfc" />
+                                <stop offset="100%" stop-color="#36b5f0" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <span class="logo-text">EmotionLens</span>
+            </div>
+            <span class="badge-academic">Protótipo Acadêmico</span>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="#" class="nav-item active" id="nav-dashboard">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <rect x="2" y="2" width="7" height="7" rx="2" stroke="currentColor" stroke-width="1.5" />
+                    <rect x="11" y="2" width="7" height="7" rx="2" stroke="currentColor" stroke-width="1.5" />
+                    <rect x="2" y="11" width="7" height="7" rx="2" stroke="currentColor" stroke-width="1.5" />
+                    <rect x="11" y="11" width="7" height="7" rx="2" stroke="currentColor" stroke-width="1.5" />
+                </svg>
+                <span>Dashboard</span>
+            </a>
+            <a href="#" class="nav-item" id="nav-sessions">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path d="M3 5h14M3 10h14M3 15h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                </svg>
+                <span>Sessões</span>
+            </a>
+            <a href="#" class="nav-item" id="nav-upload">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path d="M10 14V4m0 0L6 8m4-4l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                    <path d="M3 14v2a2 2 0 002 2h10a2 2 0 002-2v-2" stroke="currentColor" stroke-width="1.5"
+                        stroke-linecap="round" />
+                </svg>
+                <span>Upload</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <p class="footer-text">TCC — Ciência da Computação</p>
+            <p class="footer-text muted">Versão 1.0 • 2026</p>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="top-header">
+            <div class="header-left">
+                <button class="menu-toggle" id="menu-toggle" aria-label="Abrir menu">
+                    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                        <path d="M3 6h16M3 11h16M3 16h16" stroke="currentColor" stroke-width="1.8"
+                            stroke-linecap="round" />
+                    </svg>
+                </button>
+                <h1 class="page-title" id="page-title">Dashboard</h1>
+            </div>
+            <div class="header-right">
+                <div class="user-info">
+                    <div class="avatar">P</div>
+                    <span class="user-name">Psicólogo(a)</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- ===== DASHBOARD VIEW ===== -->
+        <section class="view active" id="view-dashboard">
+            <!-- Stats Row -->
+            <div class="stats-row">
+                <div class="stat-card highlight" id="stat-predominant">
+                    <div class="stat-icon emotion-icon"></div>
+                    <div class="stat-info">
+                        <span class="stat-label">Emoção Predominante</span>
+                        <span class="stat-value" id="predominant-emotion">Feliz</span>
+                        <span class="stat-sub" id="predominant-confidence">Confiança: 72%</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5" />
+                            <path d="M12 6v6l4 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                        </svg>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">Duração do Vídeo</span>
+                        <span class="stat-value" id="video-duration">02:34</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" stroke-width="1.5" />
+                            <path d="M8 12h8M12 8v8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                        </svg>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">Frames Analisados</span>
+                        <span class="stat-value" id="frames-count">154</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <path d="M9 17H5a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2h-4"
+                                stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                            <path d="M12 15l-3 4h6l-3-4z" stroke="currentColor" stroke-width="1.5"
+                                stroke-linejoin="round" />
+                        </svg>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">Total de Sessões</span>
+                        <span class="stat-value" id="sessions-count">5</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="charts-row">
+                <!-- Emotion Probabilities -->
+                <div class="card card-probabilities">
+                    <div class="card-header">
+                        <h2 class="card-title">Probabilidade das Emoções</h2>
+                        <span class="card-badge">Última sessão</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="probabilities-list" id="probabilities-list">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Timeline Chart -->
+                <div class="card card-timeline">
+                    <div class="card-header">
+                        <h2 class="card-title">Emoções ao Longo do Tempo</h2>
+                        <div class="chart-controls">
+                            <button class="chart-btn active" data-range="all">Completo</button>
+                            <button class="chart-btn" data-range="30">30s</button>
+                            <button class="chart-btn" data-range="60">60s</button>
+                        </div>
+                    </div>
+                    <div class="card-body chart-container">
+                        <canvas id="timeline-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Emotion Breakdown Donut -->
+            <div class="charts-row">
+                <div class="card card-donut">
+                    <div class="card-header">
+                        <h2 class="card-title">Distribuição Geral das Emoções</h2>
+                    </div>
+                    <div class="card-body donut-container">
+                        <canvas id="donut-chart"></canvas>
+                        <div class="donut-legend" id="donut-legend"></div>
+                    </div>
+                </div>
+
+                <!-- Recent Sessions Mini -->
+                <div class="card card-recent">
+                    <div class="card-header">
+                        <h2 class="card-title">Sessões Recentes</h2>
+                        <a href="#" class="card-link" id="link-all-sessions">Ver todas →</a>
+                    </div>
+                    <div class="card-body">
+                        <div class="sessions-mini-list" id="sessions-mini-list">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== SESSIONS VIEW ===== -->
+        <section class="view" id="view-sessions">
+            <div class="section-header">
+                <h2 class="section-title">Sessões Analisadas</h2>
+                <button class="btn btn-primary" id="btn-new-upload-from-sessions">
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                        <path d="M9 13V3m0 0L5 7m4-4l4 4" stroke="currentColor" stroke-width="1.5"
+                            stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M2 12v3a2 2 0 002 2h10a2 2 0 002-2v-3" stroke="currentColor" stroke-width="1.5"
+                            stroke-linecap="round" />
+                    </svg>
+                    Novo Upload
+                </button>
+            </div>
+            <div class="sessions-table-wrapper">
+                <table class="sessions-table" id="sessions-table">
+                    <thead>
+                        <tr>
+                            <th>Sessão</th>
+                            <th>Data</th>
+                            <th>Duração</th>
+                            <th>Emoção Principal</th>
+                            <th>Confiança</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sessions-table-body">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- ===== UPLOAD VIEW ===== -->
+        <section class="view" id="view-upload">
+            <div class="upload-container">
+                <div class="upload-card">
+                    <div class="upload-area" id="upload-area">
+                        <div class="upload-icon">
+                            <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
+                                <circle cx="28" cy="28" r="26" stroke="url(#up-grad)" stroke-width="2"
+                                    stroke-dasharray="6 4" fill="none" />
+                                <path d="M28 36V20m0 0l-6 6m6-6l6 6" stroke="url(#up-grad)" stroke-width="2.5"
+                                    stroke-linecap="round" stroke-linejoin="round" />
+                                <defs>
+                                    <linearGradient id="up-grad" x1="0" y1="0" x2="56" y2="56">
+                                        <stop offset="0%" stop-color="#7c5cfc" />
+                                        <stop offset="100%" stop-color="#36b5f0" />
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                        </div>
+                        <h3 class="upload-title">Arraste um vídeo aqui</h3>
+                        <p class="upload-subtitle">ou clique para selecionar um arquivo</p>
+                        <p class="upload-formats">Formatos aceitos: MP4, AVI, MOV • Máx. 200 MB</p>
+                        <input type="file" id="file-input" accept="video/mp4,video/avi,video/quicktime,.mp4,.avi,.mov"
+                            hidden>
+                    </div>
+
+                    <!-- Upload progress -->
+                    <div class="upload-progress hidden" id="upload-progress">
+                        <div class="progress-file-info">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <rect x="3" y="2" width="14" height="16" rx="2" stroke="currentColor"
+                                    stroke-width="1.5" />
+                                <path d="M7 10h6M7 13h4" stroke="currentColor" stroke-width="1.3"
+                                    stroke-linecap="round" />
+                            </svg>
+                            <span class="progress-filename" id="progress-filename">video.mp4</span>
+                        </div>
+                        <div class="progress-bar-track">
+                            <div class="progress-bar-fill" id="progress-bar-fill"></div>
+                        </div>
+                        <div class="progress-status">
+                            <span id="progress-text">Enviando...</span>
+                            <span id="progress-percent">0%</span>
+                        </div>
+                    </div>
+
+                    <!-- Upload success -->
+                    <div class="upload-success hidden" id="upload-success">
+                        <div class="success-icon">
+                            <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                                <circle cx="24" cy="24" r="22" stroke="#22c55e" stroke-width="2.5" fill="none" />
+                                <path d="M15 24l6 6 12-12" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                            </svg>
+                        </div>
+                        <h3 class="success-title">Análise Concluída!</h3>
+                        <p class="success-subtitle">O vídeo foi processado com sucesso.</p>
+                        <button class="btn btn-primary" id="btn-view-results">Ver Resultados</button>
+                    </div>
+                </div>
+
+                <div class="upload-info-card">
+                    <h3 class="info-title"> Como funciona</h3>
+                    <ol class="info-steps">
+                        <li>Faça upload de um vídeo gravado durante uma sessão</li>
+                        <li>O sistema extrai frames e detecta expressões faciais</li>
+                        <li>As emoções são classificadas usando modelos de reconhecimento</li>
+                        <li>Os resultados são exibidos no dashboard</li>
+                    </ol>
+                    <div class="info-note">
+                        <strong>Nota:</strong> Este é um protótipo acadêmico. Os dados são simulados para fins de
+                        demonstração do TCC.
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
