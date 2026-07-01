@@ -1,6 +1,5 @@
 # EmotionLens — React + Vite
 
-Migração do protótipo de dashboard de análise de emoções (TCC) para React, mantendo a identidade visual e preparando integração com FastAPI.
 
 ## Stack
 - React 18 + Vite
