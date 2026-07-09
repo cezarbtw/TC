@@ -1,0 +1,21 @@
+# Ambiente virtual
+.venv/
+venv/
+env/
+
+# Cache Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Variáveis de ambiente reais (NUNCA versionar — use .env.example)
+.env
+.env.*
+!.env.example
+
+# Pesos de modelos baixados pelo DeepFace (ficam em ~/.deepface por padrão)
+weights/
+
+# Uploads temporários
+*.tmp

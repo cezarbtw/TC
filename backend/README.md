@@ -4,6 +4,12 @@ API de apoio a consultas psicológicas: recebe imagens/vídeos, detecta faces e
 classifica emoções (DeepFace + OpenCV), retornando dados estruturados para o
 frontend React.
 
+## Requisitos
+
+- Python 3.11 (ou 3.10) — o DeepFace/TensorFlow **não** funcionam no 3.8/3.9
+- pip
+- virtualenv (`python -m venv`)
+
 ## Stack
 - Python **3.10 ou 3.11** (o DeepFace/TensorFlow **não** funcionam no 3.8)
 - FastAPI + Uvicorn
