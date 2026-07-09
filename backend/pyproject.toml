@@ -1,0 +1,11 @@
+[project]
+name = "emotionlens-backend"
+version = "1.0.0"
+description = "Backend de análise emocional (FastAPI + DeepFace + OpenCV) — TCC EmotionLens"
+requires-python = ">=3.10,<3.12"
+
+[tool.pytest.ini_options]
+# Permite 'import app...' ao rodar pytest a partir da pasta backend/.
+pythonpath = ["."]
+testpaths = ["tests"]
+addopts = "-q"
