@@ -1,6 +1,6 @@
 # Dependências de desenvolvimento/testes.
-# LEVES de propósito: os testes fazem override das portas (DeepFace/OpenCV) com
-# fakes, então NÃO exigem TensorFlow nem opencv para rodar a suíte.
+# LEVES de propósito: os testes fazem override das portas (modelos de IA/OpenCV)
+# com fakes, então NÃO exigem torch/ultralytics/hsemotion/opencv para rodar a suíte.
 
 fastapi==0.115.6
 python-multipart==0.0.20

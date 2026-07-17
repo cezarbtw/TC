@@ -1,14 +1,13 @@
 """Entidades e vocabulário do domínio de emoções.
 
-Camada pura: sem dependência de FastAPI, DeepFace ou OpenCV. Define os rótulos
-canônicos (em inglês, como o DeepFace produz) e o mapeamento para o português
-usado pelo frontend.
+Camada pura: sem dependência de FastAPI, do modelo de IA ou de OpenCV. Define os
+rótulos canônicos (em inglês) e o mapeamento para o português usado pelo frontend.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass
 
-# Rótulos canônicos do DeepFace (modelo de emoção FER).
+# Rótulos canônicos de emoção (7 classes).
 EN_EMOTIONS: tuple[str, ...] = (
     "angry",
     "disgust",
@@ -31,7 +30,7 @@ PT_EMOTIONS: tuple[str, ...] = (
     "neutro",
 )
 
-# Tradução DeepFace(EN) -> frontend(PT).
+# Tradução rótulo canônico (EN) -> frontend (PT).
 EN_TO_PT: dict[str, str] = {
     "happy": "feliz",
     "sad": "triste",
@@ -76,10 +75,13 @@ class FaceRegion:
 class FaceEmotion:
     """Resultado da classificação emocional de uma única face.
 
-    ``scores`` usa rótulos em inglês (0..100), como retornado pelo DeepFace.
+    ``scores`` usa os rótulos canônicos em inglês (0..100). ``confidence`` é a
+    confiança da emoção predominante; ``detection_confidence`` é a confiança do
+    detector de faces (YOLOv8) na existência da face.
     """
 
     scores: dict[str, float]
     dominant: str
     confidence: float
     region: FaceRegion | None = None
+    detection_confidence: float = 1.0

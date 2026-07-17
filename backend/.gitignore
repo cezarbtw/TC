@@ -14,8 +14,9 @@ __pycache__/
 .env.*
 !.env.example
 
-# Pesos de modelos baixados pelo DeepFace (ficam em ~/.deepface por padrão)
+# Pesos de modelos baixados em runtime (YOLOv8-face / HSEmotion / torch hub)
 weights/
+*.pt
 
 # Uploads temporários
 *.tmp

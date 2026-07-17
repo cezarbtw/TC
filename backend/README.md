@@ -1,21 +1,37 @@
 # EmotionLens — Backend
 
 API de apoio a consultas psicológicas: recebe imagens/vídeos, detecta faces e
-classifica emoções (DeepFace + OpenCV), retornando dados estruturados para o
-frontend React.
+classifica emoções, retornando dados estruturados para o frontend React.
 
 ## Requisitos
 
-- Python 3.11 (ou 3.10) — o DeepFace/TensorFlow **não** funcionam no 3.8/3.9
+- Python 3.11 (ou 3.10)
 - pip
 - virtualenv (`python -m venv`)
+- (Opcional) GPU NVIDIA + CUDA para aceleração — o código usa CPU automaticamente
+  quando não há GPU.
 
 ## Stack
-- Python **3.10 ou 3.11** (o DeepFace/TensorFlow **não** funcionam no 3.8)
+- Python **3.10 ou 3.11**
 - FastAPI + Uvicorn
 - Pydantic v2 / pydantic-settings
 - OpenCV (`opencv-python-headless`)
-- DeepFace (backend TensorFlow-CPU)
+- **YOLOv8-face** (ultralytics) para detecção/alinhamento de faces
+- **HSEmotion** (PyTorch) para classificação emocional
+
+## Pipeline de análise (HSEmotion)
+
+1. Amostra o vídeo a **~5 FPS** (não processa todos os frames).
+2. Detecta faces com **YOLOv8-face**; ignora frames sem face, com baixa confiança
+   de detecção ou faces muito pequenas.
+3. **Alinha** a face pelos olhos antes de classificar.
+4. Classifica emoções com **HSEmotion** (modelo de 7 classes) — emoção
+   predominante + probabilidades por frame.
+5. Aplica **suavização temporal** (média móvel) para reduzir ruído quadro a quadro.
+6. Agrega: emoção predominante da sessão, % por emoção, confiança média e timeline.
+
+Os modelos são carregados **uma única vez na inicialização** do backend (não a
+cada requisição) e usam **GPU automaticamente** quando disponível.
 
 ## Arquitetura (Clean Architecture / Hexagonal)
 
@@ -25,13 +41,13 @@ app/
   application/    Casos de uso (orquestração)
   core/           Config, logging, exceções
   domain/         Entidades, schemas (contrato), portas, regras puras
-  infrastructure/ Adapters concretos (DeepFace, OpenCV, repositório)
+  infrastructure/ Adapters concretos (YOLOv8, HSEmotion, OpenCV, repositório)
 ```
 
 Regra central: as camadas internas (domain/application) **não** conhecem
-FastAPI/DeepFace/OpenCV. A infraestrutura implementa as **portas**
+FastAPI/PyTorch/OpenCV. A infraestrutura implementa as **portas**
 (`domain/services/ports.py`), injetadas em `api/deps/dependencies.py`. Por isso a
-suíte de testes roda sem TensorFlow.
+suíte de testes roda sem os modelos de IA instalados.
 
 ## Como executar
 
@@ -47,7 +63,7 @@ py -3.11 -m venv .venv
 # Git Bash / Linux / macOS:
 # source .venv/bin/activate
 
-# 2) Dependências
+# 2) Dependências (torch/torchvision instalam a build de CPU por padrão)
 pip install -r requirements.txt
 
 # 3) Subir a API (a partir da pasta backend/)
@@ -58,8 +74,16 @@ uvicorn app.main:app --reload
 - Documentação interativa (Swagger): <http://localhost:8000/docs>
 - Health check: <http://localhost:8000/health>
 
-> Na **primeira** análise, o DeepFace baixa os pesos do modelo de emoção para
-> `~/.deepface/weights` (precisa de internet uma vez).
+> Na **primeira** inicialização, os pesos do YOLOv8-face e do HSEmotion são
+> baixados automaticamente (precisa de internet uma vez).
+
+### Aceleração por GPU (opcional)
+Para usar GPU, instale o PyTorch com CUDA a partir do índice oficial antes das
+demais dependências, por exemplo:
+```bash
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+```
+O código detecta a GPU automaticamente (`EMOTIONLENS_DEVICE=auto`).
 
 ## Endpoints
 
@@ -86,7 +110,8 @@ uvicorn app.main:app --reload
 
 ## Testes
 
-Os testes usam **fakes** das portas — não exigem DeepFace/OpenCV/TensorFlow:
+Os testes usam **fakes** das portas — não exigem os modelos de IA (torch,
+ultralytics, hsemotion) nem OpenCV:
 
 ```bash
 pip install -r requirements-dev.txt

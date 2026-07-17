@@ -49,18 +49,32 @@ class Settings(BaseSettings):
         "video/quicktime",
     }
 
-    # --- Parâmetros de análise (DeepFace / OpenCV) ---
-    # Backend de detecção de faces do DeepFace. "opencv" é leve e não exige
-    # download extra de pesos; "retinaface"/"mtcnn" são mais precisos porém
-    # mais pesados.
-    detector_backend: str = "opencv"
-    # Quando True, o DeepFace lança erro se nenhuma face for encontrada — usamos
-    # isso para contar faces de forma confiável.
-    enforce_detection: bool = True
-    # Nº de frames amostrados de um vídeo para compor a linha do tempo.
-    frame_sample_count: int = 30
-    # Teto de frames a decodificar, evitando processar vídeos longos por inteiro.
-    max_frames_analyzed: int = 300
+    # --- Seleção de dispositivo (aceleração) ---
+    # "auto" usa GPU (CUDA) quando disponível, senão CPU. Também aceita "cpu"/"cuda".
+    device: str = "auto"
+
+    # --- Amostragem de frames do vídeo ---
+    # Taxa de amostragem alvo (frames por segundo analisados). Não processamos
+    # todos os frames: ~5 FPS equilibra precisão e custo.
+    target_fps: float = 5.0
+    # Teto absoluto de frames a analisar, protegendo vídeos longos.
+    max_frames_analyzed: int = 600
+
+    # --- Detecção de faces (YOLOv8-face) ---
+    # Caminho/nome dos pesos do detector. Baixado uma vez pelo ultralytics.
+    face_detector_model: str = "yolov8n-face.pt"
+    # Confiança mínima da detecção para considerar a face válida.
+    min_detection_confidence: float = 0.5
+    # Lado mínimo (px) da face; faces menores são ignoradas (baixa qualidade).
+    min_face_size: int = 48
+
+    # --- Classificação emocional (HSEmotion) ---
+    # Modelo de 7 classes, compatível com as 7 emoções do frontend.
+    emotion_model_name: str = "enet_b2_7"
+
+    # --- Suavização temporal ---
+    # Tamanho da janela (nº de frames) da média móvel aplicada à timeline.
+    smoothing_window: int = 5
 
 
 @lru_cache

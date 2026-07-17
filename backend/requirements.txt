@@ -1,5 +1,5 @@
 # Backend EmotionLens — dependências de execução.
-# Alvo: Python 3.10 ou 3.11 (DeepFace/TensorFlow NÃO suportam o Python 3.8).
+# Alvo: Python 3.10 ou 3.11.
 # Instale em uma virtualenv dedicada (veja README.md).
 
 # --- Web / API ---
@@ -9,13 +9,17 @@ python-multipart==0.0.20
 pydantic==2.10.4
 pydantic-settings==2.7.1
 
-# --- Visão computacional / IA ---
+# --- Visão computacional ---
 numpy==1.26.4
 opencv-python-headless==4.10.0.84
 Pillow==11.0.0
-deepface==0.0.93
-# DeepFace usa TensorFlow como backend. tensorflow-cpu evita a necessidade de GPU
-# e é mais leve para a apresentação do TCC.
-tensorflow-cpu==2.18.0
-# Necessário porque o TF 2.16+ adota o Keras 3; o DeepFace requer a API do Keras 2.
-tf-keras==2.18.0
+
+# --- Pipeline de emoções (HSEmotion + YOLOv8-face) ---
+# torch/torchvision: por padrão instalam a build de CPU. Para GPU (CUDA),
+# instale a partir do índice oficial do PyTorch (ver README) — o código detecta
+# e usa a GPU automaticamente quando disponível.
+torch==2.5.1
+torchvision==0.20.1
+timm==1.0.11
+ultralytics==8.3.49
+hsemotion==0.3.0

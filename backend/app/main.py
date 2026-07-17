@@ -4,27 +4,43 @@ Execute com:  uvicorn app.main:app --reload   (a partir da pasta backend/)
 """
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.deps.dependencies import warmup_models
 from app.api.router import api_router
 from app.core.config import get_settings
 from app.core.errors import register_exception_handlers
 from app.core.logging import configure_logging, get_logger
 
+logger = get_logger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    # Carrega os modelos de IA uma única vez, no startup, e não a cada requisição.
+    try:
+        warmup_models()
+        logger.info("Modelos de análise emocional carregados na inicialização.")
+    except Exception:  # noqa: BLE001 - não impedir o boot por falha de warmup
+        logger.exception("Falha ao pré-carregar os modelos; será tentado sob demanda.")
+    yield
+
 
 def create_app() -> FastAPI:
     configure_logging()
     settings = get_settings()
-    logger = get_logger(__name__)
 
     app = FastAPI(
         title=settings.app_name,
         version=settings.app_version,
         description=(
-            "API de apoio a consultas psicológicas: detecção de faces e "
-            "classificação de emoções (DeepFace + OpenCV)."
+            "API de apoio a consultas psicológicas: detecção de faces (YOLOv8) e "
+            "classificação de emoções (HSEmotion)."
         ),
+        lifespan=lifespan,
     )
 
     app.add_middleware(

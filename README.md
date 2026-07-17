@@ -11,9 +11,10 @@ dois módulos independentes:
 ## Requisitos
 
 ### Backend
-- **Python 3.11** (ou 3.10) — o DeepFace/TensorFlow **não** funcionam no Python 3.8/3.9
+- **Python 3.11** (ou 3.10)
 - **pip**
 - **virtualenv** (`python -m venv`)
+- (Opcional) GPU NVIDIA + CUDA — usa CPU automaticamente quando não há GPU
 
 ### Frontend
 - **Node.js 18+**
@@ -24,7 +25,7 @@ dois módulos independentes:
 | Camada | Tecnologias |
 |--------|-------------|
 | Frontend | React 18, Vite, React Router DOM, Axios, react-chartjs-2 + Chart.js, CSS modularizado |
-| Backend | FastAPI, Uvicorn, Pydantic v2, OpenCV, DeepFace (TensorFlow-CPU) |
+| Backend | FastAPI, Uvicorn, Pydantic v2, OpenCV, YOLOv8-face (ultralytics), HSEmotion (PyTorch) |
 
 ## Como rodar
 

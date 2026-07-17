@@ -1,8 +1,8 @@
 """Portas (interfaces) do domínio.
 
 Definem os contratos que a camada de aplicação usa e que a infraestrutura
-implementa (inversão de dependência). Assim, DeepFace/OpenCV/persistência podem
-ser trocados ou mockados sem alterar as regras de negócio.
+implementa (inversão de dependência). Assim, os modelos de IA/OpenCV/persistência
+podem ser trocados ou mockados sem alterar as regras de negócio.
 
 Os frames de imagem são tratados como ``Any`` (numpy.ndarray em tempo de
 execução) para não acoplar o domínio ao numpy.
@@ -41,9 +41,12 @@ class FrameExtractor(ABC):
 
     @abstractmethod
     def extract(
-        self, video_path: str, sample_count: int, max_frames: int
+        self, video_path: str, target_fps: float, max_frames: int
     ) -> tuple[list[Any], VideoMetadata]:
-        """Retorna (frames amostrados, metadados do vídeo)."""
+        """Amostra frames a ``target_fps`` (limitado a ``max_frames``).
+
+        Retorna (frames amostrados, metadados do vídeo).
+        """
         raise NotImplementedError
 
 

@@ -1,9 +1,9 @@
 """Injeção de dependências (composition root).
 
 Constrói e injeta os adapters concretos nos casos de uso. Os imports de
-infraestrutura (DeepFace/OpenCV) são tardios, feitos dentro das factories, para
-que apenas importar este módulo não carregue TensorFlow — e para que os testes
-possam sobrescrever as dependências com fakes leves.
+infraestrutura (torch/ultralytics/hsemotion/OpenCV) são tardios, feitos dentro das
+factories, para que apenas importar este módulo não carregue os modelos de IA — e
+para que os testes possam sobrescrever as dependências com fakes leves.
 
 Singletons (``lru_cache``): o analisador (modelo carregado uma vez) e o
 repositório em memória (estado compartilhado entre requisições).
@@ -32,13 +32,31 @@ def get_image_decoder() -> ImageDecoder:
 
 @lru_cache
 def get_emotion_analyzer() -> EmotionAnalyzer:
-    from app.infrastructure.ai.deepface_analyzer import DeepFaceEmotionAnalyzer
+    from app.infrastructure.ai.hsemotion_analyzer import HSEmotionAnalyzer
+    from app.infrastructure.ai.yolo_face_detector import YoloFaceDetector
 
     settings = get_settings()
-    return DeepFaceEmotionAnalyzer(
-        detector_backend=settings.detector_backend,
-        enforce_detection=settings.enforce_detection,
+    detector = YoloFaceDetector(
+        model_path=settings.face_detector_model,
+        device=settings.device,
     )
+    return HSEmotionAnalyzer(
+        detector=detector,
+        model_name=settings.emotion_model_name,
+        device=settings.device,
+        min_confidence=settings.min_detection_confidence,
+        min_face_size=settings.min_face_size,
+    )
+
+
+def warmup_models() -> None:
+    """Carrega detector + classificador na inicialização (evita custo na 1ª
+    requisição). Falhas não impedem o boot — são logadas e o carregamento é
+    retentado sob demanda."""
+    analyzer = get_emotion_analyzer()
+    warmup = getattr(analyzer, "warmup", None)
+    if callable(warmup):
+        warmup()
 
 
 @lru_cache
@@ -80,8 +98,9 @@ def get_analyze_session_use_case(
         extractor=extractor,
         analyzer=analyzer,
         repository=repository,
-        sample_count=settings.frame_sample_count,
+        target_fps=settings.target_fps,
         max_frames=settings.max_frames_analyzed,
+        smoothing_window=settings.smoothing_window,
     )
 
 

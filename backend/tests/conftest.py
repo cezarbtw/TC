@@ -1,8 +1,8 @@
 """Fixtures de teste.
 
-A arquitetura em portas/adapters permite testar a API inteira SEM DeepFace,
-TensorFlow ou OpenCV: sobrescrevemos as portas por fakes leves via
-``app.dependency_overrides``.
+A arquitetura em portas/adapters permite testar a API inteira SEM os modelos de
+IA (torch/ultralytics/hsemotion) ou OpenCV: sobrescrevemos as portas por fakes
+leves via ``app.dependency_overrides``.
 """
 from __future__ import annotations
 
@@ -53,11 +53,16 @@ class FakeFrameExtractor(FrameExtractor):
         self._frames = frames
         self._meta = meta
 
-    def extract(self, video_path: str, sample_count: int, max_frames: int):
+    def extract(self, video_path: str, target_fps: float, max_frames: int):
         return list(self._frames), self._meta
 
 
-def make_face(dominant: str, confidence: float, area: int = 100) -> FaceEmotion:
+def make_face(
+    dominant: str,
+    confidence: float,
+    area: int = 100,
+    detection_confidence: float = 0.9,
+) -> FaceEmotion:
     scores = {
         "angry": 0.0,
         "disgust": 0.0,
@@ -74,6 +79,7 @@ def make_face(dominant: str, confidence: float, area: int = 100) -> FaceEmotion:
         dominant=dominant,
         confidence=confidence,
         region=FaceRegion(x=0, y=0, w=area, h=1),
+        detection_confidence=detection_confidence,
     )
 
 

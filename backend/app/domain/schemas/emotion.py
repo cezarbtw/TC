@@ -23,7 +23,7 @@ class FaceDetailSchema(BaseModel):
 class EmotionPredictionResponse(BaseModel):
     """Resposta de ``POST /emotion/predict``.
 
-    Mantém as chaves de emoção em inglês, como produzido pelo DeepFace.
+    Mantém as chaves de emoção em inglês, como produzido pelo classificador.
     """
 
     success: bool = Field(..., description="Indica se o processamento ocorreu sem erros.")
