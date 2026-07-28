@@ -7,6 +7,7 @@ arquivo ``.env`` na raiz do backend.
 from __future__ import annotations
 
 from functools import lru_cache
+from typing import Literal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -75,6 +76,22 @@ class Settings(BaseSettings):
     # --- Suavização temporal ---
     # Tamanho da janela (nº de frames) da média móvel aplicada à timeline.
     smoothing_window: int = 5
+
+    # --- Persistência de sessões ---
+    # "memory": estado em processo (perdido a cada reinício) — padrão de desenvolvimento.
+    # "sqlserver": persiste em Microsoft SQL Server via pyodbc (ver backend/docs/database).
+    session_repository_backend: Literal["memory", "sqlserver"] = "memory"
+
+    # --- SQL Server (usado apenas quando session_repository_backend == "sqlserver") ---
+    db_server: str = "localhost"
+    db_database: str = "EmotionLensDB"
+    # Windows Authentication (Trusted_Connection) por padrão — dispensa usuário/senha.
+    # Defina como false para usar SQL Authentication (db_username/db_password).
+    db_trusted_connection: bool = True
+    db_username: str = ""
+    db_password: str = ""
+    db_driver: str = "ODBC Driver 17 for SQL Server"
+    db_connect_timeout: int = 5
 
 
 @lru_cache

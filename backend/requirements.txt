@@ -20,6 +20,12 @@ Pillow==11.0.0
 # e usa a GPU automaticamente quando disponível.
 torch==2.5.1
 torchvision==0.20.1
-timm==1.0.11
+# timm 1.0.x mudou a classe DepthwiseSeparableConv (atributos conv_s2d/aa),
+# quebrando o unpickling do checkpoint enet_b2_7.pt baixado pela hsemotion
+# (serializado com uma versão mais antiga). 0.9.16 é compatível.
+timm==0.9.16
 ultralytics==8.3.49
 hsemotion==0.3.0
+
+# --- Persistência (SQL Server via pyodbc puro, sem ORM) ---
+pyodbc==5.1.0

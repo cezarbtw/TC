@@ -57,6 +57,11 @@ class SessionNotFoundError(DomainError):
     message = "Sessão não encontrada."
 
 
+class PersistenceError(DomainError):
+    status_code = 503
+    message = "Falha ao acessar a base de dados."
+
+
 def register_exception_handlers(app: FastAPI) -> None:
     """Registra os handlers que convertem exceções em respostas JSON."""
 

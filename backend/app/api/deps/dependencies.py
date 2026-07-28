@@ -68,6 +68,14 @@ def get_frame_extractor() -> FrameExtractor:
 
 @lru_cache
 def get_session_repository() -> SessionRepository:
+    settings = get_settings()
+    if settings.session_repository_backend == "sqlserver":
+        from app.infrastructure.repositories.sql_server_session_repository import (
+            SqlServerSessionRepository,
+        )
+
+        return SqlServerSessionRepository(settings)
+
     from app.infrastructure.repositories.in_memory_session_repository import (
         InMemorySessionRepository,
     )

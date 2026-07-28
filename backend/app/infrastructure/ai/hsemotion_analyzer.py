@@ -83,9 +83,22 @@ class HSEmotionAnalyzer(EmotionAnalyzer):
                 self._model_name,
                 self._device,
             )
-            self._recognizer = HSEmotionRecognizer(
-                model_name=self._model_name, device=self._device
-            )
+            # A lib hsemotion chama torch.load(path) sem map_location; o
+            # checkpoint publicado foi salvo em CUDA, então falha em máquinas
+            # sem GPU compatível. Força o mapeamento para o device resolvido
+            # apenas durante este carregamento (sem alterar a lib instalada).
+            import functools
+
+            import torch
+
+            original_torch_load = torch.load
+            torch.load = functools.partial(original_torch_load, map_location=self._device)
+            try:
+                self._recognizer = HSEmotionRecognizer(
+                    model_name=self._model_name, device=self._device
+                )
+            finally:
+                torch.load = original_torch_load
         return self._recognizer
 
     def warmup(self) -> None:
