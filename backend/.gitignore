@@ -7,7 +7,6 @@ env/
 __pycache__/
 *.py[cod]
 *.egg-info/
-.pytest_cache/
 
 # Variáveis de ambiente reais (NUNCA versionar — use .env.example)
 .env
@@ -17,6 +16,10 @@ __pycache__/
 # Pesos de modelos baixados em runtime (YOLOv8-face / HSEmotion / torch hub)
 weights/
 *.pt
+# Exceção: checkpoint de terceiros (community fine-tune de face sobre YOLOv8),
+# não coberto pelo auto-download da lib ultralytics — versionado propositalmente
+# para que o projeto rode após um clone limpo.
+!yolov8n-face.pt
 
 # Uploads temporários
 *.tmp

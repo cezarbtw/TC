@@ -6,7 +6,58 @@ dois módulos independentes:
 
 - **`frontend/`** — dashboard em React + Vite (upload de vídeo, gráficos, sessões).
 - **`backend/`** — API em FastAPI que detecta faces e classifica emoções
-  (DeepFace + OpenCV).
+  (YOLOv8-face + HSEmotion, via OpenCV).
+
+## Stack
+
+| Camada | Tecnologias |
+|--------|-------------|
+| Frontend | React 18, Vite, React Router DOM, Axios, react-chartjs-2 + Chart.js, CSS modularizado |
+| Backend | FastAPI, Uvicorn, Pydantic v2, OpenCV, YOLOv8-face (ultralytics), HSEmotion (PyTorch), SQL Server (pyodbc) |
+
+## Arquitetura do backend (em camadas: Router → Service → Persistência)
+
+```
+backend/app/
+  rotas/          Routers finos (FastAPI) + injeção de dependência + validação
+  servicos/       Regras de negócio e orquestração do fluxo
+  dominio/        Entidades puras (sem Pydantic/FastAPI) — representam os dados/tabelas do banco
+  esquemas/       Contratos de API (Pydantic) — o JSON que o frontend consome
+  persistencia/   Repositório(s) + conexão com o SQL Server
+  ia/             Pipeline de visão computacional (YOLOv8, HSEmotion, OpenCV, agregação)
+  nucleo/         Config, logging, exceções
+```
+
+Fluxo de uma requisição: **Router → Service → Repositório (Persistência) →
+Banco de Dados**, com o Service também orquestrando o pipeline de `ia/` na
+análise do vídeo.
+
+O Domínio (`dominio/`) usa nomes de campo em português (`nome`,
+`arquivo_origem`, `predominante`...) e é independente de Pydantic/FastAPI. O
+Schema de API (`esquemas/`) mantém os nomes de campo em inglês (`name`,
+`source_file`, `predominant`...) para preservar o contrato já consumido pelo
+frontend — a conversão entre os dois acontece explicitamente em
+`servicos/servico_sessao.py::sessao_para_schema()`.
+
+Não há interfaces abstratas (ABCs) entre as camadas: cada adapter de IA e o
+repositório têm uma única implementação, então cada peça pode ser trocada
+diretamente sem precisar de uma hierarquia de classes abstratas para isso.
+
+## Pipeline de análise (HSEmotion)
+
+1. Amostra o vídeo a **~5 FPS** (não processa todos os frames).
+2. Detecta faces com **YOLOv8-face**; ignora frames sem face, com baixa
+   confiança de detecção ou faces muito pequenas.
+3. **Alinha** a face pelos olhos antes de classificar.
+4. Classifica emoções com **HSEmotion** (modelo de 7 classes) — emoção
+   predominante + probabilidades por frame.
+5. Aplica **suavização temporal** (média móvel) para reduzir ruído quadro a
+   quadro.
+6. Agrega: emoção predominante da sessão, % por emoção, confiança média e
+   timeline.
+
+Os modelos são carregados **uma única vez na inicialização** do backend (não
+a cada requisição) e usam **GPU automaticamente** quando disponível.
 
 ## Requisitos
 
@@ -19,13 +70,6 @@ dois módulos independentes:
 ### Frontend
 - **Node.js 18+**
 - **npm**
-
-## Stack
-
-| Camada | Tecnologias |
-|--------|-------------|
-| Frontend | React 18, Vite, React Router DOM, Axios, react-chartjs-2 + Chart.js, CSS modularizado |
-| Backend | FastAPI, Uvicorn, Pydantic v2, OpenCV, YOLOv8-face (ultralytics), HSEmotion (PyTorch) |
 
 ## Como rodar
 
@@ -41,7 +85,17 @@ uvicorn app.main:app --reload
 ```
 API em `http://localhost:8000` — documentação em `http://localhost:8000/docs`.
 
-> Detalhes completos (arquitetura, endpoints, testes) em [`backend/README.md`](backend/README.md).
+> O peso do detector de faces (`yolov8n-face.pt`) já vem versionado no
+> repositório. O peso do HSEmotion é baixado automaticamente na primeira
+> inicialização (precisa de internet uma vez).
+
+#### Aceleração por GPU (opcional)
+Para usar GPU, instale o PyTorch com CUDA a partir do índice oficial antes
+das demais dependências, por exemplo:
+```bash
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+```
+O código detecta a GPU automaticamente (`EMOTIONLENS_DISPOSITIVO=auto`).
 
 ### 2) Frontend (dashboard)
 ```bash
@@ -52,47 +106,47 @@ npm run dev
 ```
 App em `http://localhost:5173`.
 
+## Endpoints
+
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| `POST` | `/sessions/upload` | Recebe **vídeo**; retorna objeto de sessão agregado (chaves em PT) |
+| `GET`  | `/sessions` | Lista as sessões analisadas |
+| `GET`  | `/sessions/{id}` | Detalha uma sessão |
+| `GET`  | `/health` | Verificação de saúde |
+
 ## Variáveis de ambiente
 
-Nenhuma configuração sensível ou específica de máquina fica no código: cada módulo
-tem um `.env.example` versionado, que deve ser copiado para um `.env` local (este
-**não** é versionado).
+Nenhuma configuração sensível ou específica de máquina fica no código: cada
+módulo tem um `.env.example` versionado, que deve ser copiado para um `.env`
+local (este **não** é versionado).
 
 ### `backend/.env` (prefixo `EMOTIONLENS_`)
 | Variável | Descrição | Padrão |
 |----------|-----------|--------|
-| `EMOTIONLENS_CORS_ORIGINS` | Origens permitidas (CORS), em JSON | `["http://localhost:5173"]` |
-| `EMOTIONLENS_MAX_UPLOAD_BYTES` | Tamanho máximo de upload | `209715200` (200 MB) |
-| `EMOTIONLENS_DETECTOR_BACKEND` | Detector de faces do DeepFace | `opencv` |
-| `EMOTIONLENS_FRAME_SAMPLE_COUNT` | Frames amostrados por vídeo | `30` |
-| `EMOTIONLENS_MAX_FRAMES_ANALYZED` | Teto de frames por vídeo | `300` |
+| `EMOTIONLENS_ORIGENS_CORS` | Origens permitidas (CORS), em JSON | `["http://localhost:5173"]` |
+| `EMOTIONLENS_TAMANHO_MAXIMO_UPLOAD_BYTES` | Tamanho máximo de upload | `209715200` (200 MB) |
+| `EMOTIONLENS_DISPOSITIVO` | Dispositivo de inferência (`auto`/`cpu`/`cuda`) | `auto` |
+| `EMOTIONLENS_FPS_ALVO` | Taxa de amostragem do vídeo (frames por segundo analisados) | `5` |
+| `EMOTIONLENS_MAX_FRAMES_ANALISADOS` | Teto de frames analisados por vídeo | `600` |
+
+> Lista completa das variáveis (incluindo conexão com o SQL Server) em
+> [`backend/.env.example`](backend/.env.example).
 
 ### `frontend/.env`
 | Variável | Descrição |
 |----------|-----------|
 | `VITE_API_URL` | Endpoint do backend FastAPI (ex.: `http://localhost:8000`) |
-| `VITE_USE_MOCK` | `true` = dados mock · `false` = consumir a API real |
 
 ## Integração frontend ↔ backend
 
-O frontend consome os endpoints expostos pelo backend. Para deixar de usar os
-dados mock e passar a consumir a API, defina no `frontend/.env`:
-```
-VITE_API_URL=http://localhost:8000
-VITE_USE_MOCK=false
-```
-Endpoints consumidos:
-- `GET  /sessions` — lista de sessões
-- `GET  /sessions/:id` — detalhe de uma sessão
-- `POST /sessions/upload` — envio de vídeo (multipart/form-data)
-
-Endpoint adicional (análise de imagem única, demonstrável via Swagger):
-- `POST /emotion/predict`
+O frontend consome os endpoints acima diretamente
+(`frontend/src/services/sessionsService.js`), usando `VITE_API_URL` para
+montar as chamadas.
 
 ## Estrutura do repositório
 ```
 TC/
-  backend/    API FastAPI (Clean Architecture) — ver backend/README.md
+  backend/    API FastAPI (rotas → serviços → persistência)
   frontend/   Dashboard React + Vite
-  docs/       Documentação (api, arquitetura, lgpd)
 ```

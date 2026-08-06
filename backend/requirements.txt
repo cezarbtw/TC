@@ -1,6 +1,6 @@
-# Backend EmotionLens — dependências de execução.
+# Backend EmotionLens — dependências.
 # Alvo: Python 3.10 ou 3.11.
-# Instale em uma virtualenv dedicada (veja README.md).
+# Instale em uma virtualenv dedicada (veja README.md na raiz do repositório).
 
 # --- Web / API ---
 fastapi==0.115.6
@@ -12,7 +12,6 @@ pydantic-settings==2.7.1
 # --- Visão computacional ---
 numpy==1.26.4
 opencv-python-headless==4.10.0.84
-Pillow==11.0.0
 
 # --- Pipeline de emoções (HSEmotion + YOLOv8-face) ---
 # torch/torchvision: por padrão instalam a build de CPU. Para GPU (CUDA),

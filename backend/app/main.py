@@ -9,57 +9,57 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.deps.dependencies import warmup_models
-from app.api.router import api_router
-from app.core.config import get_settings
-from app.core.errors import register_exception_handlers
-from app.core.logging import configure_logging, get_logger
+from app.nucleo.configuracoes import obter_configuracoes
+from app.nucleo.erros import registrar_manipuladores_excecao
+from app.nucleo.logs import configurar_logging, obter_logger
+from app.rotas.dependencias import aquecer_modelos
+from app.rotas.roteador import roteador_api
 
-logger = get_logger(__name__)
+logger = obter_logger(__name__)
 
 
 @asynccontextmanager
-async def lifespan(_: FastAPI):
+async def ciclo_de_vida(_: FastAPI):
     # Carrega os modelos de IA uma única vez, no startup, e não a cada requisição.
     try:
-        warmup_models()
+        aquecer_modelos()
         logger.info("Modelos de análise emocional carregados na inicialização.")
     except Exception:  # noqa: BLE001 - não impedir o boot por falha de warmup
         logger.exception("Falha ao pré-carregar os modelos; será tentado sob demanda.")
     yield
 
 
-def create_app() -> FastAPI:
-    configure_logging()
-    settings = get_settings()
+def criar_app() -> FastAPI:
+    configurar_logging()
+    configuracoes = obter_configuracoes()
 
     app = FastAPI(
-        title=settings.app_name,
-        version=settings.app_version,
+        title=configuracoes.nome_app,
+        version=configuracoes.versao_app,
         description=(
             "API de apoio a consultas psicológicas: detecção de faces (YOLOv8) e "
             "classificação de emoções (HSEmotion)."
         ),
-        lifespan=lifespan,
+        lifespan=ciclo_de_vida,
     )
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=settings.cors_origins,
+        allow_origins=configuracoes.origens_cors,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
     )
 
-    register_exception_handlers(app)
-    app.include_router(api_router)
+    registrar_manipuladores_excecao(app)
+    app.include_router(roteador_api)
 
     @app.get("/health", tags=["health"], summary="Verificação de saúde")
     async def health() -> dict[str, str]:
-        return {"status": "ok", "service": settings.app_name}
+        return {"status": "ok", "service": configuracoes.nome_app}
 
-    logger.info("%s v%s inicializada.", settings.app_name, settings.app_version)
+    logger.info("%s v%s inicializada.", configuracoes.nome_app, configuracoes.versao_app)
     return app
 
 
-app = create_app()
+app = criar_app()

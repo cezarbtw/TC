@@ -1,8 +1,8 @@
 /*
     EmotionLens — dados de referência (obrigatório, não é dado de exemplo).
 
-    Popula dbo.emotions com as 7 emoções suportadas pelo pipeline HSEmotion.
-    As FKs de dbo.sessions e dbo.session_emotion_scores dependem destas linhas
+    Popula dbo.emocoes com as 7 emoções suportadas pelo pipeline HSEmotion.
+    As FKs de dbo.sessoes e dbo.pontuacoes_emocao_sessao dependem destas linhas
     existirem — execute este script antes de qualquer sessão ser persistida.
 
     Idempotente: pode ser reexecutado sem duplicar ou falhar.
@@ -11,7 +11,7 @@
 USE EmotionLensDB;
 GO
 
-MERGE dbo.emotions AS target
+MERGE dbo.emocoes AS target
 USING (VALUES
     (1, N'feliz',    N'happy',    1),
     (2, N'triste',   N'sad',      2),
@@ -20,11 +20,11 @@ USING (VALUES
     (5, N'medo',     N'fear',     5),
     (6, N'nojo',     N'disgust',  6),
     (7, N'neutro',   N'neutral',  7)
-) AS source (id, code, label_en, sort_order)
+) AS source (id, codigo, rotulo_en, ordem)
 ON target.id = source.id
 WHEN MATCHED THEN
-    UPDATE SET code = source.code, label_en = source.label_en, sort_order = source.sort_order
+    UPDATE SET codigo = source.codigo, rotulo_en = source.rotulo_en, ordem = source.ordem
 WHEN NOT MATCHED THEN
-    INSERT (id, code, label_en, sort_order)
-    VALUES (source.id, source.code, source.label_en, source.sort_order);
+    INSERT (id, codigo, rotulo_en, ordem)
+    VALUES (source.id, source.codigo, source.rotulo_en, source.ordem);
 GO
