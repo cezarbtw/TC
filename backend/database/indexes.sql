@@ -19,7 +19,7 @@ IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_sessoes_data_sessao')
     CREATE INDEX IX_sessoes_data_sessao ON dbo.sessoes (data_sessao);
 GO
 
--- Suporta agregações por emoção (ex.: score médio de 'raiva' entre sessões).
+-- Mantido para instalações antigas que ainda populam pontuações abertas.
 IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_pontuacoes_emocao_id')
     CREATE INDEX IX_pontuacoes_emocao_id
         ON dbo.pontuacoes_emocao_sessao (emocao_id)

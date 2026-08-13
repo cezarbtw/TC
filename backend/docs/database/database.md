@@ -42,7 +42,7 @@ dbo.sessoes
   frames                  INT
   emocao_predominante_id  TINYINT       FK -> emocoes(id)
   confianca               DECIMAL(5,2)
-  linha_do_tempo_json     NVARCHAR(MAX)         -- JSON: dict[emoção, lista de scores por frame]
+  analise_criptografada   NVARCHAR(MAX)         -- envelope JSON com MCE + AES-256-GCM
   criado_em               DATETIME2(3)          -- auditoria
   atualizado_em           DATETIME2(3)          -- auditoria
   excluido_em             DATETIME2(3)  NULL    -- soft delete (estrutura preparada; sem UI/endpoint ainda)
@@ -50,16 +50,17 @@ dbo.sessoes
 dbo.pontuacoes_emocao_sessao
   sessao_id    INT       FK -> sessoes(id) ON DELETE CASCADE
   emocao_id    TINYINT   FK -> emocoes(id)
-  pontuacao    DECIMAL(5,2)
+  pontuacao    DECIMAL(5,2)                     -- legado/relatórios antigos; aplicação atual não grava
   PK (sessao_id, emocao_id)
 ```
 
-**Relacionamentos**: uma sessão tem exatamente uma emoção predominante (`sessoes.emocao_predominante_id → emocoes.id`) e 7 pontuações, uma por emoção (`pontuacoes_emocao_sessao`, 1 sessão : N pontuações, N emoção : N pontuações).
+**Relacionamentos**: uma sessão tem exatamente uma emoção predominante (`sessoes.emocao_predominante_id → emocoes.id`). A tabela `pontuacoes_emocao_sessao` foi mantida apenas para compatibilidade com bases antigas/relatórios, mas a aplicação atual grava a análise detalhada em `sessoes.analise_criptografada`.
 
-### Por que `probabilities` é normalizado e `timeline` fica em JSON?
+### Como `probabilities` e `timeline` são armazenados?
 
-- **`probabilities`** (as pontuações por emoção, expostas no contrato de API) tem cardinalidade fixa e pequena (7 pares emoção→score por sessão). Normalizar em `pontuacoes_emocao_sessao` custa apenas 7 `INSERT`s por sessão (via `executemany`), permite consultas SQL diretas (ex.: score médio de "raiva" entre todas as sessões) e é reconstruído com uma única query, mesmo para várias sessões de uma vez (`listar_todas` não faz N+1 queries).
-- **`timeline`** guarda uma série por frame (até ~600 amostras × 7 emoções por sessão). Normalizar geraria milhares de linhas por upload e mais uma classe de bug (ordenação, gaps). SQL Server não tem tipo `JSON` nativo, mas `NVARCHAR(MAX)` com `CHECK (ISJSON(...) = 1)` garante validade estrutural, e o round-trip via `json.dumps`/`json.loads` no Python é 100% fiel ao formato já consumido pelo frontend. Se no futuro forem necessárias queries SQL ponto-a-ponto na timeline, o SQL Server suporta `JSON_VALUE`/`OPENJSON` sobre essa mesma coluna sem migração de schema.
+- **Antes da criptografia**: `probabilities` era gravado em `pontuacoes_emocao_sessao` como 7 linhas numéricas, uma por emoção. `timeline` era gravado em `linha_do_tempo_json` como JSON aberto.
+- **Agora**: `probabilities` e `timeline` são agrupados em um único objeto de análise, passam pela camada autoral MCE e depois são cifrados com AES-256-GCM. O resultado é salvo em `sessoes.analise_criptografada`.
+- **Motivo**: a análise emocional detalhada é o dado mais sensível do sistema. Armazená-la em um envelope criptografado reduz a exposição caso alguém acesse diretamente o banco.
 
 ## Executando os scripts
 
@@ -118,7 +119,7 @@ O prefixo `EMOTIONLENS_` é mantido em todas as variáveis por consistência com
 - **Sem caminhos absolutos**: `arquivo_origem` guarda apenas o nome do arquivo enviado, nunca um caminho de disco — reforçado por `CK_sessoes_arquivo_origem_sem_caminho`.
 - **Auditoria**: `criado_em`/`atualizado_em` (`DATETIME2(3)`, preenchidos automaticamente) em `dbo.sessoes`.
 - **Soft delete**: `excluido_em` (`DATETIME2(3) NULL`) está presente no schema e já é respeitado pelas consultas de leitura (`WHERE excluido_em IS NULL`); registros **nunca** são removidos fisicamente. Não há endpoint/método de exclusão hoje — a coluna prepara a estrutura para quando essa funcionalidade for adicionada, sem exigir migração de schema.
-- **Criptografia (recomendação futura, não implementada)**: para dados de sessão mais sensíveis, considere `Always Encrypted` (nativo do SQL Server, transparente à aplicação) sobre as colunas `linha_do_tempo_json`/`arquivo_origem`, ou, como alternativa mais simples de operacionalizar num TCC, cifrar `linha_do_tempo_json` em nível de aplicação (ex.: Fernet) antes do `INSERT`, guardando a chave fora do banco (variável de ambiente/cofre de segredos) — nesse caso a `CHECK CK_sessoes_linha_do_tempo_e_json` precisaria ser removida, já que o conteúdo cifrado deixa de ser JSON válido.
+- **Criptografia da análise**: `probabilities` e `timeline` são protegidos em nível de aplicação com duas camadas: MCE (Mapeamento Criptográfico Emocional), intervenção autoral que substitui emoções por códigos internos definidos por chave, e AES-256-GCM, algoritmo pronto da biblioteca `cryptography`. As chaves ficam fora do banco, em variáveis de ambiente.
 
 ## Troubleshooting
 

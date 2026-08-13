@@ -37,7 +37,7 @@ BEGIN
         frames                  INT             NOT NULL,
         emocao_predominante_id  TINYINT         NOT NULL,
         confianca               DECIMAL(5,2)    NOT NULL,
-        linha_do_tempo_json     NVARCHAR(MAX)   NOT NULL,   -- série por frame/emoção (dict[str, list[float]] serializado)
+        analise_criptografada   NVARCHAR(MAX)   NOT NULL,   -- envelope JSON com MCE + AES-256-GCM
         criado_em               DATETIME2(3)    NOT NULL CONSTRAINT DF_sessoes_criado_em DEFAULT SYSUTCDATETIME(),
         atualizado_em           DATETIME2(3)    NOT NULL CONSTRAINT DF_sessoes_atualizado_em DEFAULT SYSUTCDATETIME(),
         excluido_em             DATETIME2(3)    NULL,       -- soft delete (nunca DELETE físico)
@@ -46,7 +46,50 @@ BEGIN
 END
 GO
 
--- Distribuição de probabilidade por emoção de cada sessão (7 linhas por sessão).
+IF OBJECT_ID(N'dbo.sessoes', N'U') IS NOT NULL
+   AND COL_LENGTH('dbo.sessoes', 'analise_criptografada') IS NULL
+BEGIN
+    ALTER TABLE dbo.sessoes ADD analise_criptografada NVARCHAR(MAX) NULL;
+END
+GO
+
+IF EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CK_sessoes_linha_do_tempo_e_json')
+    ALTER TABLE dbo.sessoes DROP CONSTRAINT CK_sessoes_linha_do_tempo_e_json;
+GO
+
+IF OBJECT_ID(N'dbo.sessoes', N'U') IS NOT NULL
+   AND COL_LENGTH('dbo.sessoes', 'linha_do_tempo_json') IS NOT NULL
+BEGIN
+    ALTER TABLE dbo.sessoes ALTER COLUMN linha_do_tempo_json NVARCHAR(MAX) NULL;
+END
+GO
+
+IF OBJECT_ID(N'dbo.sessoes', N'U') IS NOT NULL
+   AND COL_LENGTH('dbo.sessoes', 'linha_do_tempo_json') IS NOT NULL
+   AND COL_LENGTH('dbo.sessoes', 'analise_criptografada') IS NOT NULL
+BEGIN
+    UPDATE dbo.sessoes
+    SET analise_criptografada = linha_do_tempo_json
+    WHERE analise_criptografada IS NULL
+      AND ISJSON(linha_do_tempo_json) = 1
+      AND JSON_VALUE(linha_do_tempo_json, '$.alg') = 'AES-256-GCM';
+END
+GO
+
+IF OBJECT_ID(N'dbo.sessoes', N'U') IS NOT NULL
+   AND COL_LENGTH('dbo.sessoes', 'linha_do_tempo_json') IS NOT NULL
+   AND NOT EXISTS (
+       SELECT 1
+       FROM dbo.sessoes
+       WHERE analise_criptografada IS NULL
+   )
+BEGIN
+    ALTER TABLE dbo.sessoes DROP COLUMN linha_do_tempo_json;
+END
+GO
+
+-- Distribuição aberta por emoção mantida apenas para bases antigas/relatórios.
+-- A aplicação atual grava os dados completos em dbo.sessoes.analise_criptografada.
 IF OBJECT_ID(N'dbo.pontuacoes_emocao_sessao', N'U') IS NULL
 BEGIN
     CREATE TABLE dbo.pontuacoes_emocao_sessao

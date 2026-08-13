@@ -30,8 +30,12 @@ IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CK_sessoes_conf
     ALTER TABLE dbo.sessoes ADD CONSTRAINT CK_sessoes_confianca_intervalo CHECK (confianca BETWEEN 0 AND 100);
 GO
 
-IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CK_sessoes_linha_do_tempo_e_json')
-    ALTER TABLE dbo.sessoes ADD CONSTRAINT CK_sessoes_linha_do_tempo_e_json CHECK (ISJSON(linha_do_tempo_json) = 1);
+IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CK_sessoes_analise_criptografada_e_json')
+    ALTER TABLE dbo.sessoes ADD CONSTRAINT CK_sessoes_analise_criptografada_e_json CHECK (ISJSON(analise_criptografada) = 1);
+GO
+
+IF EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CK_sessoes_linha_do_tempo_e_json')
+    ALTER TABLE dbo.sessoes DROP CONSTRAINT CK_sessoes_linha_do_tempo_e_json;
 GO
 
 -- LGPD: impede gravar caminho de arquivo (absoluto ou relativo) — apenas o

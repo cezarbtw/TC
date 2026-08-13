@@ -129,9 +129,29 @@ local (este **não** é versionado).
 | `EMOTIONLENS_DISPOSITIVO` | Dispositivo de inferência (`auto`/`cpu`/`cuda`) | `auto` |
 | `EMOTIONLENS_FPS_ALVO` | Taxa de amostragem do vídeo (frames por segundo analisados) | `5` |
 | `EMOTIONLENS_MAX_FRAMES_ANALISADOS` | Teto de frames analisados por vídeo | `600` |
+| `EMOTIONLENS_CHAVE_CRIPTOGRAFIA` | Chave da camada AES-256-GCM usada para proteger a análise no banco | obrigatório em ambiente real |
+| `EMOTIONLENS_CHAVE_MCE` | Chave da camada autoral MCE aplicada antes do AES | obrigatório em ambiente real |
 
 > Lista completa das variáveis (incluindo conexão com o SQL Server) em
 > [`backend/.env.example`](backend/.env.example).
+
+## Criptografia dos dados de análise
+
+Os dados detalhados da análise emocional são protegidos antes de serem gravados
+no SQL Server. O backend aplica duas camadas:
+
+1. **MCE (Mapeamento Criptográfico Emocional)** — camada autoral do projeto. Ela
+   transforma a estrutura emocional, renomeando emoções para códigos internos,
+   reordenando esses códigos por chave e removendo os nomes semânticos das
+   emoções antes da criptografia principal.
+2. **AES-256-GCM** — camada criptográfica pronta e padronizada, implementada com
+   a biblioteca `cryptography`. Ela cifra o resultado da MCE e também valida a
+   integridade dos dados na leitura.
+
+O banco armazena um envelope JSON criptografado em
+`dbo.sessoes.analise_criptografada`. A API descriptografa esse envelope na camada
+de persistência, então o frontend continua consumindo o mesmo contrato de
+`probabilities` e `timeline`.
 
 ### `frontend/.env`
 | Variável | Descrição |
