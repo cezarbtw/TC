@@ -21,7 +21,6 @@ class RepositorioSessao:
         self._configuracoes = configuracoes or obter_configuracoes()
         self._criptografia = CriptografiaAnalise(
             self._configuracoes.chave_criptografia,
-            self._configuracoes.chave_mce,
         )
 
     def criar(self, rascunho: RascunhoSessao) -> Sessao:

@@ -1,107 +1,77 @@
-import hashlib
-import hmac
 from typing import Any
 
-from app.dominio.emocao import EMOCOES_PT
+TABELA_SUBSTITUICAO = {
+    "A": "N",
+    "N": "A",
+    "O": "B",
+    "B": "O",
+    "C": "P",
+    "P": "C",
+    "D": "Q",
+    "Q": "D",
+    "E": "1",
+    "1": "E",
+    "F": "T",
+    "T": "F",
+    "G": "2",
+    "2": "G",
+    "S": "H",
+    "H": "S",
+    "U": "8",
+    "8": "U",
+    "I": "7",
+    "7": "I",
+    "V": "J",
+    "J": "V",
+    "W": "4",
+    "4": "W",
+    "L": "9",
+    "9": "L",
+    "M": "Y",
+    "Y": "M",
+    "K": "3",
+    "3": "K",
+    "X": "6",
+    "6": "X",
+    "Z": "5",
+    "5": "Z",
+}
 
 
-VERSAO_MCE = 1
-
-
-def aplicar_mce(dados: dict[str, Any], chave: bytes) -> dict[str, Any]:
-    mapa = _mapa_emocoes(chave)
-    mapa_inverso = {
-        emocao: codigo
-        for codigo, emocao in mapa.items()
-    }
-
-    return {
-        "p": _codificar_distribuicao(
-            dados["probabilidades"],
-            mapa_inverso,
-        ),
-        "t": _codificar_linha_do_tempo(
-            dados["linha_do_tempo"],
-            mapa_inverso,
-        ),
-    }
-
-
-def desfazer_mce(
-    dados: dict[str, Any],
-    chave: bytes,
-) -> dict[str, Any]:
-    mapa = _mapa_emocoes(chave)
-
-    return {
-        "probabilidades": _decodificar_distribuicao(
-            dados["p"],
-            mapa,
-        ),
-        "linha_do_tempo": _decodificar_linha_do_tempo(
-            dados["t"],
-            mapa,
-        ),
-    }
-
-
-def _mapa_emocoes(chave: bytes) -> dict[str, str]:
-    ordenadas = sorted(
-        EMOCOES_PT,
-        key=lambda emocao: hmac.new(
-            chave,
-            f"ordem:{emocao}".encode("utf-8"),
-            hashlib.sha256,
-        ).digest(),
+def _substituir(texto: str) -> str:
+    return "".join(
+        TABELA_SUBSTITUICAO.get(caractere, caractere)
+        for caractere in texto.upper()
     )
 
+
+def aplicar_mce(dados: dict[str, Any]) -> dict[str, Any]:
     return {
-        f"e{indice + 1:02d}": emocao
-        for indice, emocao in enumerate(ordenadas)
+        "probabilidades": {
+            _substituir(emocao): float(valor)
+            for emocao, valor in dados["probabilidades"].items()
+        },
+        "linha_do_tempo": {
+            _substituir(emocao): [
+                float(valor)
+                for valor in valores
+            ]
+            for emocao, valores in dados["linha_do_tempo"].items()
+        },
     }
 
 
-def _codificar_distribuicao(
-    distribuicao: dict[str, float],
-    mapa_inverso: dict[str, str],
-) -> dict[str, float]:
+def desfazer_mce(dados: dict[str, Any]) -> dict[str, Any]:
     return {
-        mapa_inverso[emocao]: float(distribuicao[emocao])
-        for emocao in EMOCOES_PT
-    }
-
-
-def _decodificar_distribuicao(
-    distribuicao: dict[str, float],
-    mapa: dict[str, str],
-) -> dict[str, float]:
-    return {
-        emocao: float(distribuicao[codigo])
-        for codigo, emocao in mapa.items()
-    }
-
-
-def _codificar_linha_do_tempo(
-    linha_do_tempo: dict[str, list[float]],
-    mapa_inverso: dict[str, str],
-) -> dict[str, list[float]]:
-    return {
-        mapa_inverso[emocao]: [
-            float(valor)
-            for valor in linha_do_tempo[emocao]
-        ]
-        for emocao in EMOCOES_PT
-    }
-
-
-def _decodificar_linha_do_tempo(
-    linha_do_tempo: dict[str, list[float]],
-    mapa: dict[str, str],
-) -> dict[str, list[float]]:
-    return {
-        emocao: [
-            float(valor)
-            for valor in linha_do_tempo[codigo]
-        ]
-        for codigo, emocao in mapa.items()
+        "probabilidades": {
+            _substituir(codigo).lower(): float(valor)
+            for codigo, valor in dados["probabilidades"].items()
+        },
+        "linha_do_tempo": {
+            _substituir(codigo).lower(): [
+                float(valor)
+                for valor in valores
+            ]
+            for codigo, valores in dados["linha_do_tempo"].items()
+        },
     }

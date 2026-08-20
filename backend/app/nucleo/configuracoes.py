@@ -80,9 +80,8 @@ class Configuracoes(BaseSettings):
     db_driver: str = "ODBC Driver 17 for SQL Server"
     db_tempo_limite_conexao: int = 5
 
-    # --- Criptografia em duas camadas (MCE + AES-256-GCM) ---
+    # --- Criptografia em duas camadas (substituição de emoções + AES-256-GCM) ---
     chave_criptografia: str = "EmotionLens-AES-Analise-Local-2026"
-    chave_mce: str = "EmotionLens-MCE-Mapa-Emocional-2026"
 
 
 @lru_cache
