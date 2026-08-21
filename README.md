@@ -1,6 +1,6 @@
 # EmotionLens
 
-Aplicação web de apoio a consultas psicológicas que usa visão computacional para
+Aplicação web que usa visão computacional para
 identificar emoções faciais. Projeto de TCC de Ciência da Computação, dividido em
 dois módulos independentes:
 
