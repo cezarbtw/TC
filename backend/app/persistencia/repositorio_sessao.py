@@ -23,7 +23,7 @@ class RepositorioSessao:
             self._configuracoes.chave_criptografia,
         )
 
-    def criar(self, rascunho: RascunhoSessao) -> Sessao:
+    def criar(self, rascunho: RascunhoSessao, usuario_id: int) -> Sessao:
         import pyodbc
 
         from app.persistencia.conexao import escopo_conexao
@@ -43,11 +43,12 @@ class RepositorioSessao:
                 cursor.execute(
                     """
                     INSERT INTO dbo.sessoes
-                        (nome, arquivo_origem, data_sessao, duracao, frames,
+                        (usuario_id, nome, arquivo_origem, data_sessao, duracao, frames,
                          emocao_predominante_id, confianca, analise_criptografada)
                     OUTPUT INSERTED.id
-                    VALUES (?, ?, ?, ?, ?, (SELECT id FROM dbo.emocoes WHERE codigo = ?), ?, ?)
+                    VALUES (?, ?, ?, ?, ?, ?, (SELECT id FROM dbo.emocoes WHERE codigo = ?), ?, ?)
                     """,
+                    usuario_id,
                     "",
                     rascunho.arquivo_origem,
                     data_sessao,
@@ -81,7 +82,7 @@ class RepositorioSessao:
             linha_do_tempo=rascunho.linha_do_tempo,
         )
 
-    def listar_todas(self) -> list[Sessao]:
+    def listar_todas(self, usuario_id: int) -> list[Sessao]:
         import pyodbc
 
         from app.persistencia.conexao import escopo_conexao
@@ -97,9 +98,10 @@ class RepositorioSessao:
                            s.analise_criptografada
                     FROM dbo.sessoes AS s
                     JOIN dbo.emocoes AS e ON e.id = s.emocao_predominante_id
-                    WHERE s.excluido_em IS NULL
+                    WHERE s.excluido_em IS NULL AND s.usuario_id = ?
                     ORDER BY s.id DESC
-                    """
+                    """,
+                    usuario_id,
                 )
                 linhas = cursor.fetchall()
         except pyodbc.Error as exc:
@@ -107,7 +109,7 @@ class RepositorioSessao:
 
         return [self._linha_para_entidade(linha) for linha in linhas]
 
-    def obter(self, sessao_id: int) -> Sessao | None:
+    def obter(self, sessao_id: int, usuario_id: int) -> Sessao | None:
         import pyodbc
 
         from app.persistencia.conexao import escopo_conexao
@@ -123,9 +125,10 @@ class RepositorioSessao:
                            s.analise_criptografada
                     FROM dbo.sessoes AS s
                     JOIN dbo.emocoes AS e ON e.id = s.emocao_predominante_id
-                    WHERE s.id = ? AND s.excluido_em IS NULL
+                    WHERE s.id = ? AND s.usuario_id = ? AND s.excluido_em IS NULL
                     """,
                     sessao_id,
+                    usuario_id,
                 )
                 linha = cursor.fetchone()
                 if linha is None:

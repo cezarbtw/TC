@@ -39,7 +39,7 @@ class ServicoAnaliseSessao:
         self._max_frames = max_frames
         self._janela_suavizacao = janela_suavizacao
 
-    def executar(self, caminho_video: str, arquivo_origem: str) -> SessaoSchema:
+    def executar(self, caminho_video: str, arquivo_origem: str, usuario_id: int) -> SessaoSchema:
         frames, meta = self._extrator.extrair(
             caminho_video, self._fps_alvo, self._max_frames
         )
@@ -77,7 +77,7 @@ class ServicoAnaliseSessao:
             probabilidades=probabilidades,
             linha_do_tempo=linha_do_tempo,
         )
-        sessao = self._repositorio.criar(rascunho)
+        sessao = self._repositorio.criar(rascunho, usuario_id)
         logger.info(
             "Sessão %s criada a partir de '%s': predominante=%s (%.1f%%), "
             "%d frames com face de %d amostrados.",

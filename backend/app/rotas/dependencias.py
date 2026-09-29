@@ -13,10 +13,14 @@ from __future__ import annotations
 
 from functools import lru_cache
 
-from fastapi import Depends, UploadFile
+import jwt
+from fastapi import Depends, HTTPException, UploadFile, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.nucleo.configuracoes import Configuracoes, obter_configuracoes
 from app.nucleo.erros import ArquivoMuitoGrandeError, MidiaInvalidaError, TipoMidiaNaoSuportadoError
+
+esquema_bearer = HTTPBearer()
 
 
 @lru_cache
@@ -60,6 +64,42 @@ def obter_repositorio_sessao():
     from app.persistencia.repositorio_sessao import RepositorioSessao
 
     return RepositorioSessao(obter_configuracoes())
+
+
+@lru_cache
+def obter_repositorio_usuario():
+    from app.persistencia.repositorio_usuario import RepositorioUsuario
+
+    return RepositorioUsuario(obter_configuracoes())
+
+
+def obter_usuario_atual(
+    credenciais: HTTPAuthorizationCredentials = Depends(esquema_bearer),
+    repositorio=Depends(obter_repositorio_usuario),
+    configuracoes: Configuracoes = Depends(obter_configuracoes),
+):
+    try:
+        dados = jwt.decode(
+            credenciais.credentials,
+            configuracoes.chave_jwt,
+            algorithms=[configuracoes.algoritmo_jwt],
+        )
+        usuario_id = int(dados["sub"])
+    except (jwt.PyJWTError, KeyError, TypeError, ValueError):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token de acesso inválido ou expirado.",
+            headers={"WWW-Authenticate": "Bearer"},
+        ) from None
+
+    usuario = repositorio.obter_por_id(usuario_id)
+    if usuario is None or not usuario.ativo:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Usuário sem acesso ativo.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return usuario
 
 
 # --- Factories de serviços (dependem das factories acima) ---

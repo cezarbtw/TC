@@ -83,6 +83,12 @@ class Configuracoes(BaseSettings):
     # --- Criptografia em duas camadas (substituição de emoções + AES-256-GCM) ---
     chave_criptografia: str = "EmotionLens-AES-Analise-Local-2026"
 
+    # --- Autenticação local ---
+    # Em produção, use uma chave longa, aleatória e exclusiva do ambiente.
+    chave_jwt: str = "troque-esta-chave-jwt-em-producao"
+    algoritmo_jwt: str = "HS256"
+    jwt_expiracao_minutos: int = 480
+
 
 @lru_cache
 def obter_configuracoes() -> Configuracoes:

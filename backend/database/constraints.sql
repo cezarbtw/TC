@@ -16,6 +16,16 @@ GO
 
 -- --- dbo.sessoes -------------------------------------------------------------
 
+IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE name = 'UQ_usuarios_nome')
+    ALTER TABLE dbo.usuarios ADD CONSTRAINT UQ_usuarios_nome UNIQUE (nome);
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = 'FK_sessoes_usuario')
+    ALTER TABLE dbo.sessoes
+        ADD CONSTRAINT FK_sessoes_usuario
+        FOREIGN KEY (usuario_id) REFERENCES dbo.usuarios (id);
+GO
+
 IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = 'FK_sessoes_emocao_predominante')
     ALTER TABLE dbo.sessoes
         ADD CONSTRAINT FK_sessoes_emocao_predominante

@@ -7,10 +7,10 @@
 USE EmotionLensDB;
 GO
 
--- Suporta listar_todas(): sessões ativas (não deletadas), mais recentes primeiro.
-IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_sessoes_ativas_id')
-    CREATE INDEX IX_sessoes_ativas_id
-        ON dbo.sessoes (id DESC)
+-- Suporta listar_todas(): sessões ativas do profissional, mais recentes primeiro.
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_sessoes_usuario_ativas_id')
+    CREATE INDEX IX_sessoes_usuario_ativas_id
+        ON dbo.sessoes (usuario_id, id DESC)
         WHERE excluido_em IS NULL;
 GO
 

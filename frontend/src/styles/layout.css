@@ -186,6 +186,18 @@
   color: var(--text-secondary);
 }
 
+.logout-button {
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.logout-button:hover {
+  color: var(--text-primary);
+}
+
 .view {
   padding: 28px 32px;
   flex: 1;

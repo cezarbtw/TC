@@ -31,3 +31,7 @@ pyodbc==5.1.0
 
 # --- Criptografia dos dados de análise ---
 cryptography==43.0.3
+
+# --- Autenticação local ---
+bcrypt==4.2.1
+PyJWT==2.10.1
