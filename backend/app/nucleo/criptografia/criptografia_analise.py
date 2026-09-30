@@ -1,13 +1,14 @@
+from __future__ import annotations
 import json
 from typing import Any
 
-from app.criptografia.mce.mce import (
+from app.nucleo.criptografia.autoral.mce import (
     aplicar_mce,
     desfazer_mce,
     VERSAO_MCE,
 )
 
-from app.criptografia.aes.aes_gcm import (
+from app.nucleo.criptografia.padrao.aes_gcm import (
     normalizar_chave_aes,
     criptografar_aes,
     descriptografar_aes,

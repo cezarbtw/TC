@@ -47,27 +47,26 @@ class Configuracoes(BaseSettings):
     dispositivo: str = "auto"
 
     # --- Amostragem de frames do vídeo ---
-    # Taxa de amostragem alvo (frames por segundo analisados). Não processamos
-    # todos os frames: ~5 FPS equilibra precisão e custo.
-    fps_alvo: float = 5.0
+    # Capturar 10 FPS aumenta muito a acurácia sem estourar limite.
+    fps_alvo: float = 10.0
     # Teto absoluto de frames a analisar, protegendo vídeos longos.
     max_frames_analisados: int = 600
 
     # --- Detecção de faces (YOLOv8-face) ---
     # Caminho/nome dos pesos do detector. Baixado uma vez pelo ultralytics.
     modelo_detector_face: str = "yolov8n-face.pt"
-    # Confiança mínima da detecção para considerar a face válida.
-    confianca_minima_deteccao: float = 0.5
-    # Lado mínimo (px) da face; faces menores são ignoradas (baixa qualidade).
-    tamanho_minimo_face: int = 48
+    # Aumentando para 0.65 evitamos que sombras ou mãos sejam detectadas como rosto.
+    confianca_minima_deteccao: float = 0.65
+    # Lado mínimo (px) da face; rostos menores que 80px geralmente geram emoções erradas (ruído).
+    tamanho_minimo_face: int = 80
 
     # --- Classificação emocional (HSEmotion) ---
     # Modelo de 7 classes, compatível com as 7 emoções do frontend.
     nome_modelo_emocao: str = "enet_b2_7"
 
     # --- Suavização temporal ---
-    # Tamanho da janela (nº de frames) da média móvel aplicada à timeline.
-    janela_suavizacao: int = 5
+    # Janela de 9 (quase 1 segundo a 10 FPS) gera um gráfico muito mais suave e elimina ruídos rápidos.
+    janela_suavizacao: int = 9
 
     # --- SQL Server ---
     db_servidor: str = "localhost"

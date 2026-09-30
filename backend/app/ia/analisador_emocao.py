@@ -119,7 +119,15 @@ class AnalisadorEmocaoHSEmotion:
             if recorte is None:
                 continue
 
-            rgb = cv2.cvtColor(recorte, cv2.COLOR_BGR2RGB)
+            # Melhoria de contraste adaptativo (CLAHE) para vídeos escuros/webcams ruins
+            lab = cv2.cvtColor(recorte, cv2.COLOR_BGR2LAB)
+            l, a, b = cv2.split(lab)
+            clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+            cl = clahe.apply(l)
+            limg = cv2.merge((cl, a, b))
+            recorte_eq = cv2.cvtColor(limg, cv2.COLOR_LAB2BGR)
+
+            rgb = cv2.cvtColor(recorte_eq, cv2.COLOR_BGR2RGB)
             try:
                 _, logits = recognizer.predict_emotions(rgb, logits=True)
             except Exception:  # noqa: BLE001 - uma face ruim não deve abortar tudo

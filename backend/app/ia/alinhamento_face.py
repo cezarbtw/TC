@@ -15,7 +15,7 @@ _OLHO_ESQUERDO = 0
 _OLHO_DIREITO = 1
 
 
-def alinhar_e_recortar(imagem: Any, face: FaceDetectada, margem: float = 0.2) -> Any:
+def alinhar_e_recortar(imagem: Any, face: FaceDetectada, margem: float = 0.3) -> Any:
     """Retorna o recorte facial (BGR) alinhado pelos olhos, com margem.
 
     ``margem`` expande o bounding box proporcionalmente para incluir contexto

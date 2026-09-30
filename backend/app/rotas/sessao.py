@@ -57,11 +57,24 @@ async def enviar_sessao(
 
     sufixo = os.path.splitext(file.filename or "")[1] or ".mp4"
     caminho_tmp: str | None = None
+    import time
+    from rich.console import Console
+    console = Console()
+    
+    inicio_proc = time.perf_counter()
+    console.print(f"\n[bold yellow][START][/bold yellow] Iniciando processamento do vídeo: {file.filename} ...")
+    
     try:
         with tempfile.NamedTemporaryFile(delete=False, suffix=sufixo) as tmp:
             tmp.write(bytes_video)
             caminho_tmp = tmp.name
-        return servico.executar(caminho_tmp, arquivo_origem=file.filename or "video")
+        
+        resultado = servico.executar(caminho_tmp, arquivo_origem=file.filename or "video")
+        
+        fim_proc = time.perf_counter()
+        tempo = round(fim_proc - inicio_proc, 2)
+        console.print(f"[bold green][SUCESSO][/bold green] Processamento e Criptografia concluídos em [bold cyan]{tempo}s[/bold cyan]!")
+        return resultado
     finally:
         if caminho_tmp and os.path.exists(caminho_tmp):
             try:

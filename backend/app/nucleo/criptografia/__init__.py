@@ -1,0 +1,1 @@
+from .criptografia_analise import CriptografiaAnalise
