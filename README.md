@@ -85,6 +85,21 @@ uvicorn app.main:app --reload
 ```
 API em `http://localhost:8000` — documentação em `http://localhost:8000/docs`.
 
+#### Primeiro usuário
+
+O sistema não possui cadastro público. Após configurar o banco, o administrador
+cria cada conta pelo terminal, definindo a senha inicial:
+
+```bash
+cd backend
+python scripts/criar_usuario.py usuario "Ana" --senha "uma-senha-forte"
+```
+
+O comando exige senha com no mínimo 12 caracteres e armazena somente seu hash
+bcrypt. As sessões são vinculadas ao usuário autenticado, portanto uma conta só
+acessa os próprios vídeos e análises. Em bancos já existentes, as sessões
+antigas ficam sem acesso até receberem um `usuario_id` manualmente.
+
 > O peso do detector de faces (`yolov8n-face.pt`) já vem versionado no
 > repositório. O peso do HSEmotion é baixado automaticamente na primeira
 > inicialização (precisa de internet uma vez).
@@ -131,6 +146,8 @@ local (este **não** é versionado).
 | `EMOTIONLENS_MAX_FRAMES_ANALISADOS` | Teto de frames analisados por vídeo | `600` |
 | `EMOTIONLENS_CHAVE_CRIPTOGRAFIA` | Chave da camada AES-256-GCM usada para proteger a análise no banco | obrigatório em ambiente real |
 | `EMOTIONLENS_CHAVE_MCE` | Chave da camada autoral MCE aplicada antes do AES | obrigatório em ambiente real |
+| `EMOTIONLENS_CHAVE_JWT` | Chave usada para assinar os tokens de acesso | obrigatório em ambiente real |
+| `EMOTIONLENS_JWT_EXPIRACAO_MINUTOS` | Duração da sessão em minutos | `480` |
 
 > Lista completa das variáveis (incluindo conexão com o SQL Server) em
 > [`backend/.env.example`](backend/.env.example).

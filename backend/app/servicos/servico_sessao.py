@@ -28,12 +28,12 @@ def sessao_para_schema(sessao: Sessao) -> SessaoSchema:
     )
 
 
-def listar_sessoes(repositorio: RepositorioSessao) -> list[SessaoSchema]:
-    return [sessao_para_schema(sessao) for sessao in repositorio.listar_todas()]
+def listar_sessoes(repositorio: RepositorioSessao, usuario_id: int) -> list[SessaoSchema]:
+    return [sessao_para_schema(sessao) for sessao in repositorio.listar_todas(usuario_id)]
 
 
-def obter_sessao(repositorio: RepositorioSessao, sessao_id: int) -> SessaoSchema:
-    sessao = repositorio.obter(sessao_id)
+def obter_sessao(repositorio: RepositorioSessao, sessao_id: int, usuario_id: int) -> SessaoSchema:
+    sessao = repositorio.obter(sessao_id, usuario_id)
     if sessao is None:
         raise SessaoNaoEncontradaError(f"Sessão {sessao_id} não encontrada.")
     return sessao_para_schema(sessao)

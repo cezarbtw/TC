@@ -9,6 +9,22 @@
 USE EmotionLensDB;
 GO
 
+-- Usuários são criados exclusivamente pelo administrador via scripts/criar_usuario.py.
+IF OBJECT_ID(N'dbo.usuarios', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.usuarios
+    (
+        id              INT             IDENTITY(1,1) NOT NULL,
+        nome            NVARCHAR(80)    NOT NULL,
+        nome_exibicao   NVARCHAR(120)   NOT NULL,
+        senha_hash      VARCHAR(100)    NOT NULL,
+        ativo           BIT             NOT NULL CONSTRAINT DF_usuarios_ativo DEFAULT 1,
+        criado_em       DATETIME2(3)    NOT NULL CONSTRAINT DF_usuarios_criado_em DEFAULT SYSUTCDATETIME(),
+        CONSTRAINT PK_usuarios PRIMARY KEY (id)
+    );
+END
+GO
+
 -- Tabela de referência: as 7 emoções suportadas pelo pipeline (HSEmotion).
 -- Populada por seed.sql — é pré-requisito, não dado de exemplo opcional.
 IF OBJECT_ID(N'dbo.emocoes', N'U') IS NULL
@@ -30,6 +46,7 @@ BEGIN
     CREATE TABLE dbo.sessoes
     (
         id                      INT             IDENTITY(1,1) NOT NULL,
+        usuario_id              INT             NOT NULL,
         nome                    NVARCHAR(50)    NOT NULL,   -- ex.: "Sessão 01"
         arquivo_origem          NVARCHAR(255)   NOT NULL,   -- apenas o NOME do arquivo enviado (nunca path/binário)
         data_sessao             DATE            NOT NULL,
@@ -43,6 +60,14 @@ BEGIN
         excluido_em             DATETIME2(3)    NULL,       -- soft delete (nunca DELETE físico)
         CONSTRAINT PK_sessoes PRIMARY KEY (id)
     );
+END
+GO
+
+-- Em bases existentes, sessões anteriores não são expostas até receberem um usuário.
+IF OBJECT_ID(N'dbo.sessoes', N'U') IS NOT NULL
+   AND COL_LENGTH('dbo.sessoes', 'usuario_id') IS NULL
+BEGIN
+    ALTER TABLE dbo.sessoes ADD usuario_id INT NULL;
 END
 GO
 
@@ -60,7 +85,7 @@ GO
 IF OBJECT_ID(N'dbo.sessoes', N'U') IS NOT NULL
    AND COL_LENGTH('dbo.sessoes', 'linha_do_tempo_json') IS NOT NULL
 BEGIN
-    ALTER TABLE dbo.sessoes ALTER COLUMN linha_do_tempo_json NVARCHAR(MAX) NULL;
+    EXEC(N'ALTER TABLE dbo.sessoes ALTER COLUMN linha_do_tempo_json NVARCHAR(MAX) NULL;');
 END
 GO
 
@@ -68,11 +93,13 @@ IF OBJECT_ID(N'dbo.sessoes', N'U') IS NOT NULL
    AND COL_LENGTH('dbo.sessoes', 'linha_do_tempo_json') IS NOT NULL
    AND COL_LENGTH('dbo.sessoes', 'analise_criptografada') IS NOT NULL
 BEGIN
-    UPDATE dbo.sessoes
-    SET analise_criptografada = linha_do_tempo_json
-    WHERE analise_criptografada IS NULL
-      AND ISJSON(linha_do_tempo_json) = 1
-      AND JSON_VALUE(linha_do_tempo_json, '$.alg') = 'AES-256-GCM';
+    EXEC(N'
+        UPDATE dbo.sessoes
+        SET analise_criptografada = linha_do_tempo_json
+        WHERE analise_criptografada IS NULL
+          AND ISJSON(linha_do_tempo_json) = 1
+          AND JSON_VALUE(linha_do_tempo_json, ''$.alg'') = ''AES-256-GCM'';
+    ');
 END
 GO
 
@@ -84,7 +111,7 @@ IF OBJECT_ID(N'dbo.sessoes', N'U') IS NOT NULL
        WHERE analise_criptografada IS NULL
    )
 BEGIN
-    ALTER TABLE dbo.sessoes DROP COLUMN linha_do_tempo_json;
+    EXEC(N'ALTER TABLE dbo.sessoes DROP COLUMN linha_do_tempo_json;');
 END
 GO
 
